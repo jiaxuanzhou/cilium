@@ -1958,6 +1958,10 @@ func (e *Endpoint) SetStateLocked(toState, reason string) bool {
 OKState:
 	e.state = toState
 	e.logStatusLocked(Other, OK, reason)
+	metrics.EndpointStateCount.
+		WithLabelValues(fromState).Dec()
+	metrics.EndpointStateCount.
+		WithLabelValues(toState).Inc()
 	return true
 }
 
@@ -2006,6 +2010,10 @@ func (e *Endpoint) BuilderSetStateLocked(toState, reason string) bool {
 OKState:
 	e.state = toState
 	e.logStatusLocked(Other, OK, reason)
+	metrics.EndpointStateCount.
+		WithLabelValues(fromState).Dec()
+	metrics.EndpointStateCount.
+		WithLabelValues(toState).Inc()
 	return true
 }
 

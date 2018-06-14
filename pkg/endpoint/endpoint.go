@@ -1896,6 +1896,11 @@ func (e *Endpoint) GetState() string {
 // endpoint.Mutex must be held
 // Returns true only if endpoints state was changed as requested
 func (e *Endpoint) SetStateLocked(toState, reason string) bool {
+	scopedLog := log.WithFields(logrus.Fields{
+		"ep Labels:": e.GetLabels(),
+		"ep ID":      e.GetID(),
+	})
+
 	// Validate the state transition.
 	fromState := e.state
 	switch fromState { // From state
@@ -1958,10 +1963,22 @@ func (e *Endpoint) SetStateLocked(toState, reason string) bool {
 OKState:
 	e.state = toState
 	e.logStatusLocked(Other, OK, reason)
+	scopedLog.Info("MK in SetStateLocked BEFORE fromState:(decrementing) ", fromState)
+	scopedLog.Info("MK in SetStateLocked BEFORE fromState Count:", metrics.EndpointStateCount.
+		WithLabelValues(fromState))
+	scopedLog.Info("MK in SetStateLocked BEFORE toState: (incrementing) ", toState)
+	scopedLog.Info("MK in SetStateLocked BEFORE toState Count:", metrics.EndpointStateCount.
+		WithLabelValues(toState))
 	metrics.EndpointStateCount.
 		WithLabelValues(fromState).Dec()
 	metrics.EndpointStateCount.
 		WithLabelValues(toState).Inc()
+	scopedLog.Info("MK in SetStateLocked AFTER fromState:(decrementing) ", fromState)
+	scopedLog.Info("MK in SetStateLocked AFTER fromState Count:", metrics.EndpointStateCount.
+		WithLabelValues(fromState))
+	scopedLog.Info("MK in SetStateLocked AFTER toState: (incrementing) ", toState)
+	scopedLog.Info("MK in SetStateLocked AFTER toState Count:", metrics.EndpointStateCount.
+		WithLabelValues(toState))
 	return true
 }
 
@@ -1969,6 +1986,12 @@ OKState:
 // endpoint.Mutex must be held
 // endpoint BuildMutex must be held!
 func (e *Endpoint) BuilderSetStateLocked(toState, reason string) bool {
+
+	scopedLog := log.WithFields(logrus.Fields{
+		"ep Labels:": e.GetLabels(),
+		"ep ID":      e.GetID(),
+	})
+
 	// Validate the state transition.
 	fromState := e.state
 	switch fromState { // From state
@@ -2010,6 +2033,22 @@ func (e *Endpoint) BuilderSetStateLocked(toState, reason string) bool {
 OKState:
 	e.state = toState
 	e.logStatusLocked(Other, OK, reason)
+	scopedLog.Info("MK in BuilderSetStateLocked BEFORE fromState:(decrementing) ", fromState)
+	scopedLog.Info("MK in BuilderSetStateLocked BEFORE fromState Count:", metrics.EndpointStateCount.
+		WithLabelValues(fromState))
+	scopedLog.Info("MK in BuilderSetStateLocked BEFORE toState: (incrementing) ", toState)
+	scopedLog.Info("MK in BuilderSetStateLocked BEFORE toState Count:", metrics.EndpointStateCount.
+		WithLabelValues(toState))
+	metrics.EndpointStateCount.
+		WithLabelValues(fromState).Dec()
+	metrics.EndpointStateCount.
+		WithLabelValues(toState).Inc()
+	scopedLog.Info("MK in BuilderSetStateLocked AFTER fromState:(decrementing) ", fromState)
+	scopedLog.Info("MK in BuilderSetStateLocked AFTER fromState Count:", metrics.EndpointStateCount.
+		WithLabelValues(fromState))
+	scopedLog.Info("MK in BuilderSetStateLocked AFTER toState: (incrementing) ", toState)
+	scopedLog.Info("MK in BuilderSetStateLocked AFTER toState Count:", metrics.EndpointStateCount.
+		WithLabelValues(toState))
 	metrics.EndpointStateCount.
 		WithLabelValues(fromState).Dec()
 	metrics.EndpointStateCount.

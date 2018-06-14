@@ -143,10 +143,12 @@ func NewPutEndpointIDHandler(d *Daemon) PutEndpointIDHandler {
 // request that was specified. Returns an HTTP code response code and an
 // error msg (or nil on success).
 func (d *Daemon) createEndpoint(epTemplate *models.EndpointChangeRequest, id string, lbls []string) (int, error) {
+
 	ep, err := endpoint.NewEndpointFromChangeModel(epTemplate)
 	if err != nil {
 		return PutEndpointIDInvalidCode, err
 	}
+
 	ep.SetDefaultOpts(option.Config.Opts)
 
 	oldEp, err2 := endpointmanager.Lookup(id)
@@ -178,7 +180,22 @@ func (d *Daemon) createEndpoint(epTemplate *models.EndpointChangeRequest, id str
 		}
 	}
 
+	scopedLog := log.WithFields(logrus.Fields{
+		"ep Labels:": ep.GetLabels(),
+		"ep ID":      ep.GetID(),
+	})
 	ep.SetIdentityLabels(d, addLabels)
+
+	scopedLog.Info("MK in createEndpoint BEFORE ep.GetState():(incrementing) ", ep.GetState())
+	scopedLog.Info("MK in createEndpoint BEFORE ep.GetState() Count:", metrics.EndpointStateCount.
+		WithLabelValues(ep.GetState()))
+
+	metrics.EndpointStateCount.
+		WithLabelValues(ep.GetState()).Inc()
+
+	scopedLog.Info("MK in createEndpoint AFTER ep.GetState():(incrementing) ", ep.GetState())
+	scopedLog.Info("MK in createEndpoint AFTER ep.GetState() Count:", metrics.EndpointStateCount.
+		WithLabelValues(ep.GetState()))
 
 	if err := endpointmanager.AddEndpoint(d, ep, "Create endpoint from API PUT"); err != nil {
 		log.WithError(err).Warn("Aborting endpoint join")
@@ -192,9 +209,6 @@ func (d *Daemon) createEndpoint(epTemplate *models.EndpointChangeRequest, id str
 			EventType:  workloads.EventTypeStart,
 		}
 	}
-
-	metrics.EndpointStateCount.
-		WithLabelValues(ep.GetState()).Inc()
 
 	return PutEndpointIDCreatedCode, nil
 }
@@ -445,12 +459,6 @@ func (d *Daemon) deleteEndpoint(ep *endpoint.Endpoint) int {
 		scopedLog.WithError(err).Warn("Ignoring error while deleting endpoint")
 	}
 
-	// Since the endpoint is already removed from endpointmanager queue,
-	// we do not need to acquire any lock on it.
-	if len(errors) == 0 {
-		metrics.EndpointStateCount.
-			WithLabelValues(ep.GetState()).Dec()
-	}
 	return len(errors)
 }
 
@@ -462,6 +470,10 @@ func (d *Daemon) deleteEndpoint(ep *endpoint.Endpoint) int {
 // Specific users such as the cilium-health EP may choose not to release the IP
 // when deleting the endpoint. Most users should pass true for releaseIP.
 func (d *Daemon) deleteEndpointQuiet(ep *endpoint.Endpoint, releaseIP bool) []error {
+	scopedLog := log.WithFields(logrus.Fields{
+		"ep Labels:": ep.GetLabels(),
+		"ep ID":      ep.GetID(),
+	})
 
 	// Only used for CRI-O since it does not support events.
 	if d.workloadsEventsCh != nil && ep.GetContainerID() != "" {
@@ -491,6 +503,16 @@ func (d *Daemon) deleteEndpointQuiet(ep *endpoint.Endpoint, releaseIP bool) []er
 	// Remove the endpoint before we clean up. This ensures it is no longer
 	// listed or queued for rebuilds.
 	endpointmanager.Remove(ep)
+
+	scopedLog.Info("MK in deleteEndpointQuiet BEFORE ep.GetState():(decrementing) ", ep.GetState())
+	scopedLog.Info("MK in deleteEndpointQuiet BEFORE ep.GetState() Count:", metrics.EndpointStateCount.
+		WithLabelValues(ep.GetState()))
+	metrics.EndpointStateCount.
+		WithLabelValues(ep.GetState()).Dec()
+
+	scopedLog.Info("MK in deleteEndpointQuiet AFTER ep.GetState():(decrementing) ", ep.GetState())
+	scopedLog.Info("MK in deleteEndpointQuiet AFTER ep.GetState() Count:", metrics.EndpointStateCount.
+		WithLabelValues(ep.GetState()))
 
 	// If dry mode is enabled, no changes to BPF maps are performed
 	if !d.DryModeEnabled() {

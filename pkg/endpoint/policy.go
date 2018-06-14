@@ -600,9 +600,25 @@ func (e *Endpoint) regeneratePolicy(owner Owner, opts models.ConfigurationMap) (
 
 // Called with e.Mutex UNlocked
 func (e *Endpoint) regenerate(owner Owner, reason string) (retErr error) {
+	scopedLog := log.WithFields(logrus.Fields{
+		"ep Labels:": e.GetLabels(),
+		"ep ID":      e.GetID(),
+	})
+	scopedLog.Info("MK in regenerate BEFORE ***** EndpointCountRegenerating:(incrementing): Current EndpointCountRegenerating value:", metrics.EndpointCountRegenerating)
+	scopedLog.Info("MK in regenerate BEFORE ***** EndpointState:(incrementing): Current EndpointStateCount regenerating value:", metrics.EndpointStateCount.
+		WithLabelValues(StateRegenerating))
 	metrics.EndpointCountRegenerating.Inc()
+	scopedLog.Info("MK in regenerate AFTER ***** EndpointCountRegenerating:(incrementing): Current EndpointCountRegenerating value:", metrics.EndpointCountRegenerating)
+	scopedLog.Info("MK in regenerate AFTER ***** EndpointState:(incrementing): Current EndpointStateCount regenerating value:", metrics.EndpointStateCount.
+		WithLabelValues(StateRegenerating))
 	defer func() {
+		scopedLog.Info("MK in regenerate BEFORE ***** EndpointCountRegenerating:(decrementing): Current EndpointCountRegenerating value:", metrics.EndpointCountRegenerating)
+		scopedLog.Info("MK in regenerate BEFORE ***** EndpointState:(decrementing): Current EndpointStateCount regenerating value:", metrics.EndpointStateCount.
+			WithLabelValues(StateRegenerating))
 		metrics.EndpointCountRegenerating.Dec()
+		scopedLog.Info("MK in regenerate AFTER ***** EndpointCountRegenerating:(decrementing): Current EndpointCountRegenerating value:", metrics.EndpointCountRegenerating)
+		scopedLog.Info("MK in regenerate AFTER ***** EndpointState:(decrementing): Current EndpointStateCount regenerating value:", metrics.EndpointStateCount.
+			WithLabelValues(StateRegenerating))
 		if retErr == nil {
 			metrics.EndpointRegenerationCount.
 				WithLabelValues(metrics.LabelValueOutcomeSuccess).Inc()

@@ -40,6 +40,8 @@ import (
 	"github.com/cilium/cilium/pkg/option"
 	"github.com/cilium/cilium/pkg/pidfile"
 
+	"github.com/cilium/cilium/pkg/metrics"
+	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 )
 
@@ -230,6 +232,21 @@ func LaunchAsEndpoint(owner endpoint.Owner, hostAddressing *models.NodeAddressin
 	if err = configureHealthRouting(info.ContainerName, vethPeerName, hostAddressing); err != nil {
 		return fmt.Errorf("Error while configuring routes: %s", err)
 	}
+	scopedLog := log.WithFields(logrus.Fields{
+		"ep Labels:": ep.GetLabels(),
+		"ep ID":      ep.GetID(),
+	})
+
+	scopedLog.Info("MK in LaunchAsEndpoint BEFORE ep.GetState():(decrementing) ", ep.GetState())
+	scopedLog.Info("MK in LaunchAsEndpoint BEFORE ep.GetState() Count:", metrics.EndpointStateCount.
+		WithLabelValues(ep.GetState()))
+
+	metrics.EndpointStateCount.
+		WithLabelValues(ep.GetState()).Dec()
+
+	scopedLog.Info("MK in LaunchAsEndpoint AFTER ep.GetState():(decrementing) ", ep.GetState())
+	scopedLog.Info("MK in LaunchAsEndpoint AFTER ep.GetState() Count:", metrics.EndpointStateCount.
+		WithLabelValues(ep.GetState()))
 
 	// Add the endpoint
 	if err := endpointmanager.AddEndpoint(owner, ep, "Create cilium-health endpoint"); err != nil {

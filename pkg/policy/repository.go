@@ -39,7 +39,9 @@ type Repository struct {
 
 // NewPolicyRepository allocates a new policy repository
 func NewPolicyRepository() *Repository {
-	return &Repository{}
+	return &Repository{
+		revision: 1,
+	}
 }
 
 // traceState is an internal structure used to collect information

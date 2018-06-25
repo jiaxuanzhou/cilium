@@ -120,6 +120,7 @@ eBPF
 ec
 elasticsearch
 Elasticsearch
+epub
 endian
 endianness
 endpointSelector
@@ -176,6 +177,7 @@ hashtables
 hoc
 Holzheu
 hq
+html
 http
 https
 Huapeng
